@@ -11,11 +11,7 @@
     "build-storybook": "storybook build",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx lib/db/migrate.ts",
-    "db:push": "drizzle-kit push",
-    "openai:embedding": "tsx app/api/openai/embedDocs.ts",
-    "llamaindex:embedding": "tsx app/api/llamaindex/embedDocs.ts",
-    "langchain:embedding": "tsx app/api/langchain/embedDocs.ts",
-    "vercelai:embedding": "tsx app/api/vercelai/embedDocs.ts"
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.0.5",
