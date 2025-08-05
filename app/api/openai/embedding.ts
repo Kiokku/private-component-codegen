@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { env } from '@/lib/env.mjs';
+import { searchSimilarEmbeddings } from '@/lib/db/openai/selectors';
 
 const embeddingAI = new OpenAI({
   apiKey: env.AI_KEY,
@@ -42,4 +43,25 @@ export async function getEmbeddingsByChunks(
     text: chunks[i],
     embedding: item.embedding as number[]
   }));
+}
+
+// 生成单个 embedding
+export async function getEmbedding(text: string) {
+  const resp = await embeddingAI.embeddings.create({
+    model: env.EMBEDDING || 'text-embedding-ada-002',
+    input: text,
+    encoding_format: 'float'
+  });
+  return resp.data[0].embedding as number[];
+}
+
+// 检索召回
+export async function retrieveEmbedding(
+  text: string,
+  threshold = 0.7,
+  topN = 5
+): Promise<Array<{ content: string; similarity: number }>> {
+  const embedding = await getEmbedding(text);
+  const results = await searchSimilarEmbeddings({ embedding, threshold, topN });
+  return results;
 }
