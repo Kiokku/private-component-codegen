@@ -9,7 +9,7 @@ import type {
 } from 'openai/resources/chat/completions';
 import { getSystemPrompt } from '@/lib/prompt';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 const openai = new OpenAI({
   apiKey: env.AI_KEY,
