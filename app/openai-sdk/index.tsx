@@ -23,6 +23,8 @@ const Home = () => {
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(true);
   const abortControllerRef = useRef<AbortController | null>(null);
+  // 记录最近一次追加到消息中的内容，防止重复渲染
+  const lastChunkRef = useRef<string>('');
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,7 +51,6 @@ const Home = () => {
   const handleSSEEvent = useCallback((eventType: SSEEvent, data: string) => {
     try {
       const parsedData = JSON.parse(data);
-
       if (eventType === 'related') {
         // 更新最后一条助手消息的 RAG 文档
         setMessages((prev) => {
@@ -62,6 +63,10 @@ const Home = () => {
         });
       } else if (eventType === 'message') {
         // 更新最后一条助手消息的内容
+        if (typeof parsedData !== 'string') return;
+        // 跳过与上一块完全相同的分片，避免重复
+        if (lastChunkRef.current === parsedData) return;
+        lastChunkRef.current = parsedData;
         setMessages((prev) => {
           const newMessages = [...prev];
           const lastMessage = newMessages[newMessages.length - 1];
@@ -91,6 +96,8 @@ const Home = () => {
       setIsLoading(true);
       setError(null);
       setIsConnected(true);
+      // 新一轮请求，重置去重标记
+      lastChunkRef.current = '';
 
       // 添加用户消息
       addMessage('user', userInput);
@@ -130,6 +137,8 @@ const Home = () => {
 
         const decoder = new TextDecoder();
         let buffer = '';
+        // 记录上一个分片中遗留的 event 类型，便于与下一条 data 配对
+        let pendingEventType: SSEEvent | null = null;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -139,15 +148,27 @@ const Home = () => {
           const lines = buffer.split('\n');
           buffer = lines.pop() || '';
 
-          for (const line of lines) {
-            if (line.startsWith('event: ')) {
-              const eventType = line.slice(7) as SSEEvent;
-              const nextLine = lines[lines.indexOf(line) + 1];
+          // 顺序消费行，允许 event 和 data 跨分片出现
+          for (let i = 0; i < lines.length; i += 1) {
+            const line = lines[i];
+            if (!line) continue;
 
-              if (nextLine && nextLine.startsWith('data: ')) {
-                const data = nextLine.slice(6);
-                handleSSEEvent(eventType, data);
-              }
+            if (line.startsWith('event: ')) {
+              pendingEventType = line.slice(7) as SSEEvent;
+              continue;
+            }
+
+            if (line.startsWith('data: ') && pendingEventType) {
+              const data = line.slice(6);
+              handleSSEEvent(pendingEventType, data);
+              pendingEventType = null;
+              continue;
+            }
+
+            // 空行表示一个 Server-Sent Event 结束
+            if (line.trim() === '') {
+              // 保守起见，未配对的数据在空行处清空 pending
+              pendingEventType = pendingEventType;
             }
           }
         }

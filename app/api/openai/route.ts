@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 3. 检索相关内容
-  const retrieved = await retrieveEmbedding(userContent, 0.7, 3);
+  const retrieved = await retrieveEmbedding(userContent, 0.5, 3);
   const reference = referenceString(retrieved);
   const systemPrompt = getSystemPrompt(reference);
 
