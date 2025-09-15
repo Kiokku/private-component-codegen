@@ -8,6 +8,13 @@
       "when": 1748532400409,
       "tag": "0000_slow_mastermind",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1757342876687,
+      "tag": "0001_cold_tyrannus",
+      "breakpoints": true
     }
   ]
 }
