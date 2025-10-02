@@ -1,5 +1,10 @@
 import type { CoreMessage } from 'ai';
 
 export type OpenAIRequest = {
-  message: CoreMessage[];
+  messages: CoreMessage[];
+};
+
+export type SearchResult = {
+  content: string;
+  similarity: number;
 };
